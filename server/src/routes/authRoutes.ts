@@ -12,8 +12,8 @@ import {
   getAdminStats,
   getAllUsers,
   getServerLogs
-} from '../controllers/authController';
-import { authToken, authAdmin } from '../middleware/auth';
+} from '../controllers/authController.js';
+import { authToken, authAdmin } from '../middleware/auth.js';
 const router = express.Router();
 
 router.post('/signup', signup);

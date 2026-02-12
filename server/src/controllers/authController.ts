@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "../models/User";
-import Admin, { IAdmin } from "../models/Admin";
-import { sendOTP, sendResetLink } from "../utils/emailService";
-import { sendSMS } from "../utils/smsService";
-import { AuthRequest } from "../middleware/auth";
+import User, { IUser } from "../models/User.js";
+import Admin, { IAdmin } from "../models/Admin.js";
+import { sendOTP, sendResetLink } from "../utils/emailService.js";
+import { sendSMS } from "../utils/smsService.js";
+import { AuthRequest } from "../middleware/auth.js";
 import crypto from "crypto";
 
 
