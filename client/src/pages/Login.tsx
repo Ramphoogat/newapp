@@ -38,7 +38,11 @@ const Login = () => {
       }
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        alert(error.response?.data?.message || "Login failed");
+        if (error.response?.status === 404) {
+          alert("No user found in usage database. Please sign up first.");
+        } else {
+          alert(error.response?.data?.message || "Login failed");
+        }
       } else {
         alert("An unexpected error occurred");
       }
@@ -69,11 +73,13 @@ const Login = () => {
         localStorage.setItem("last_user", identifier);
       }
 
-      // check if user is admin but tried to login in public view or vice versa
-      // actually we just redirect them to the right place
-      if (data.result.role === "admin") {
+      // Redirect based on the portal used for login
+      if (isAdminView) {
+        // If logging in via Admin Portal, go to Admin Dashboard
+        // (Backend verifies role, but double check handled by protected route usually)
         navigate("/admin/dashboard");
       } else {
+        // If logging in via Public Portal, go to Public Dashboard
         navigate("/dashboard");
       }
     } catch (error: unknown) {
@@ -104,10 +110,10 @@ const Login = () => {
   };
 
   return (
-    <div className="font-display transition-colors duration-300 antialiased overflow-hidden">
-      <main className="relative min-h-screen w-full flex items-center justify-center p-4 bg-gray-900">
+    <div className="font-display transition-colors duration-300 antialiased">
+      <main className="relative h-screen w-full flex justify-center p-4 py-10 bg-gray-900 overflow-y-auto no-scrollbar">
         {/* Liquid Chrome Background */}
-        <div className="absolute inset-0 z-0">
+        <div className="fixed inset-0 z-0">
           <LiquidChrome
             baseColor={isAdminView ? [0.1, 0.1, 0.2] : [0.1, 0.2, 0.1]}
             speed={0.4}
@@ -116,7 +122,7 @@ const Login = () => {
           />
         </div>
 
-        <div className="glass-card w-full max-w-md p-10 rounded-3xl shadow-2xl relative z-10 transition-all duration-500">
+        <div className="glass-card w-full max-w-md p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl relative z-10 transition-all duration-500 my-auto">
           <div className="flex justify-center mb-6">
             <div className="bg-gray-100 p-1 rounded-full flex">
               <button
@@ -218,7 +224,7 @@ const Login = () => {
                     Phone Number
                   </label>
                   <div className="flex gap-2">
-                    <div className="w-1/4">
+                    <div className="w-1/3 sm:w-1/4">
                       <input
                         id="countryCode"
                         type="text"

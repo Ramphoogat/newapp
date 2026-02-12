@@ -34,13 +34,22 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         role = 'admin';
     }
 
+    // Sanitize inputs
+    const sanitizedEmail = email ? email.toLowerCase().trim() : "";
+    const sanitizedUsername = username ? username.trim() : "";
+    const sanitizedPhone = phoneNumber ? phoneNumber.trim() : "";
+
     // Only set fullPhoneNumber if phoneNumber is provided and not empty
-    const fullPhoneNumber = (phoneNumber && phoneNumber.trim()) 
-      ? (countryCode ? `${countryCode}${phoneNumber}` : phoneNumber)
+    const fullPhoneNumber = sanitizedPhone
+      ? (countryCode ? `${countryCode}${sanitizedPhone}` : sanitizedPhone)
       : undefined;
 
+    // Use sanitized values
+    const queryEmail = sanitizedEmail;
+    const queryUsername = sanitizedUsername;
+
     // Build the query for existing user check
-    const orQuery: any[] = [{ email }, { username }];
+    const orQuery: any[] = [{ email: queryEmail }, { username: queryUsername }];
     if (fullPhoneNumber) {
         orQuery.push({ phoneNumber: fullPhoneNumber });
     }
@@ -74,8 +83,8 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const newUser = new Model({
       name,
-      username,
-      email,
+      username: queryUsername,
+      email: queryEmail,
       countryCode,
       phoneNumber: fullPhoneNumber,
       password: hashedPassword,
@@ -104,7 +113,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       if (verificationMethod === 'phone' && fullPhoneNumber) {
         await sendSMS(fullPhoneNumber, otp);
       } else {
-        await sendOTP(email, otp);
+        await sendOTP(queryEmail, otp);
       }
     } catch (sendError) {
       console.error('Error sending OTP, but user was created:', sendError);
@@ -193,11 +202,31 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 // Validates user credentials and triggers the Two-Factor Authentication (2FA) process by sending an OTP
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { identifier, password } = req.body; // identifier can be email or username
+
+    let { identifier, password } = req.body; // identifier can be email or username
 
     if (!identifier || !password) {
       res.status(400).json({ message: "Identifier and password are required" });
       return;
+    }
+
+    identifier = identifier.trim();
+    // Check if identifier looks like an email (has @), if so, lowercase it?
+    // Actually, if we stored email as lowercase, we must search lowercase.
+    // If it's a username, we stored it as trimmed. 
+    // Safest is to check both original (trimmed) and lowercase if it differs?
+    // But since we are enforcing lowercase email in signup (in my proposed change), 
+    // we should treat input as lowercase checking for email matches.
+
+    // Better approach: Regular regex or just rely on $or logic with specific fields
+    // But identifier is one field.
+    // If identifier is "User@Example.com", we should look for "user@example.com" in email field.
+    // If identifier is "UserName", we look for "UserName" in username field.
+    
+    // Simplification for reliability:
+    // If it contains '@', treat as email and lowercase it.
+    if (identifier.includes('@')) {
+        identifier = identifier.toLowerCase();
     }
 
     // Find user by email OR username in both collections
@@ -537,7 +566,8 @@ export const loginWithPhone = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { countryCode, phoneNumber } = req.body;
+    let { countryCode, phoneNumber } = req.body;
+    phoneNumber = phoneNumber ? phoneNumber.trim() : "";
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
 
     let user: IUser | IAdmin | null = await User.findOne({ phoneNumber: fullPhoneNumber });

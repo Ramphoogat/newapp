@@ -19,11 +19,11 @@ export interface IAdmin extends Document {
 }
 
 const AdminSchema: Schema = new Schema({
-  name: { type: String },
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  countryCode: { type: String },
-  phoneNumber: { type: String, unique: true, sparse: true },
+  name: { type: String, trim: true },
+  username: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  countryCode: { type: String, trim: true },
+  phoneNumber: { type: String, unique: true, sparse: true, trim: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['admin'], default: 'admin' },
   otp: { type: String },
