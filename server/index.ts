@@ -24,24 +24,30 @@ app.get("/", (req, res) => {
 });
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI;
+const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) return;
+  if (!process.env.MONGO_URI) return;
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("✅ Connected to MongoDB");
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err);
+  }
+};
 
-if (!MONGO_URI) {
-  console.error(
-    "MONGO_URI is not defined in .env. Please add it to start the server.",
-  );
-} else {
-  mongoose
-    .connect(MONGO_URI)
-    .then(() => console.log("✅ Connected to MongoDB"))
-    .catch((err) => console.error("❌ MongoDB connection error:", err));
-}
+// Call connection on every request (serverless compatible)
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
-// Check if run directly (not imported)
+// Check if run directly (not imported) - typical for local dev
 import { pathToFileURL } from 'url';
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+    connectDB().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
     });
 }
 
